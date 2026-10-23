@@ -23,18 +23,20 @@ process of the application and none of the others.
 
 ## Install
 
+From this repository:
+
 ```powershell
-dsh plugin --profile desktop add dsh-restart-app
+dsh plugin --profile desktop add github:7AAAAAH/dsh-restart-app
 ```
 
-Then **restart the application once** so the profile picks the plugin up. From
-then on the button lives in the sidebar foot, next to the settings gear.
-
-From a checkout instead of npm:
+From a checkout:
 
 ```powershell
 dsh plugin --profile desktop add link:C:\path\to\dsh-restart-app
 ```
+
+Then **restart the application once** so the profile picks the plugin up. From
+then on the button lives in the sidebar foot, next to the settings gear.
 
 Uninstall:
 
@@ -114,6 +116,9 @@ variable is the difference between a working app and that crash dialog.
 | `cordis.patch.yml` | The bundle patch that inserts the plugin into a profile. |
 | `locale/*.json` | Plugin-manager metadata only; runtime strings live in `client.js`. |
 | `test/render.mjs` | Dependency-free assertions on the generated scripts. |
+
+`test/` ships with the repository, not with the package: run the assertions from
+a checkout, not from `node_modules`.
 
 ```powershell
 node test/render.mjs

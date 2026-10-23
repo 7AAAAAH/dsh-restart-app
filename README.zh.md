@@ -16,17 +16,19 @@ DeepSeek Harness 侧边栏底部的 **重启 DSH** 按钮。点一下，整个�
 
 ## 安装
 
-```powershell
-dsh plugin --profile desktop add dsh-restart-app
-```
+从本仓库安装：
 
-然后**重启一次应用**让 profile 加载插件。之后按钮就出现在侧边栏底部、设置齿轮旁边。
+```powershell
+dsh plugin --profile desktop add github:7AAAAAH/dsh-restart-app
+```
 
 从本地目录安装：
 
 ```powershell
 dsh plugin --profile desktop add link:C:\path\to\dsh-restart-app
 ```
+
+然后**重启一次应用**让 profile 加载插件。之后按钮就出现在侧边栏底部、设置齿轮旁边。
 
 卸载：
 
@@ -94,6 +96,8 @@ node-addon-require-builtin-win32-x64-msvc (auto)
 | `cordis.patch.yml` | 把插件插进 profile 的 bundle patch。 |
 | `locale/*.json` | 只有插件管理器元数据；运行时字符串在 `client.js` 里。 |
 | `test/render.mjs` | 对生成脚本的零依赖断言。 |
+
+`test/` 随仓库走，不随包走：断言要在源码树里跑，而不是在 `node_modules` 里。
 
 ```powershell
 node test/render.mjs
