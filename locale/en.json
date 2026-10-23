@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Restart DSH",
+    "description": "Adds a button in the sidebar foot that restarts the whole DeepSeek Harness desktop application (window shell and Host) and reloads the page when it is back."
+  }
+}

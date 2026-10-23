@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "重启 DSH",
+    "description": "在侧边栏底部加一个按钮，重启整个 DeepSeek Harness 桌面应用（窗口外壳与宿主进程），应用回来后自动刷新页面。"
+  }
+}

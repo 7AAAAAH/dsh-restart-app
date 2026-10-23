@@ -1,0 +1,24 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  render:
+    # The plugin targets the Windows desktop app: its scripts are PowerShell and
+    # its checks include the "not a desktop Host" branch, which only answers the
+    # same way on Windows.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check syntax
+        run: |
+          node --check index.js
+          node --check scripts.js
+          node --check client.js
+      - name: Check the generated PowerShell
+        run: node test/render.mjs
