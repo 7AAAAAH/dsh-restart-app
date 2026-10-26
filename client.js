@@ -1,14 +1,30 @@
 /**
- * Client half of dsh-restart-app: one control in the sidebar's foot row
- * (`sidebar.footer.action`, kind `list`, scope `root`, props `{ wide }`).
+ * Client half of dsh-restart-app: one icon button in the window's top-left
+ * strip, just right of the sidebar toggle.
+ *
+ * The button registers into `shell.overlay` (kind `list`, scope `root`, always
+ * mounted) rather than the sidebar foot: the foot is hidden while the sidebar is
+ * collapsed, and the sidebar package's `shell.leading` seat is only rendered on
+ * macOS. `shell.overlay` is a full-window layer whose direct children get
+ * `pointer-events: auto`, so an absolutely positioned button there sits in the
+ * titlebar without disturbing the layout.
+ *
+ * The application's own menu strip starts at `--dsh-windows-menu-start` (48px),
+ * exactly where this button goes, so the injected CSS pushes that variable to
+ * the right of the button — 84px normally, 120px when the sidebar is collapsed
+ * (the collapsed layout parks its new-session button at 48px, so the button
+ * itself moves to 84px there).
  *
  * The control asks the Host whether this page belongs to the desktop
  * application first; on a plain `dsh web` Host it renders nothing, so no click
  * can ever ask a browser session to kill its own terminal.
  *
- * One click posts: the Host answers 202 and then kills and relaunches itself, so
- * this page waits for the server to answer again and reloads into the fresh
- * application. A second click while that is under way is ignored.
+ * One click posts: the Host answers 202 and then kills and relaunches itself.
+ * The page then waits for the server to go DOWN and come back before reloading,
+ * because the helper sleeps before it kills anything — an early successful probe
+ * is still the old process and reloading on it is the "soft restart" that used
+ * to happen before the real one. A second click while that is under way is
+ * ignored.
  *
  * No Harness Client package is imported: React comes from the browser module
  * table, everything else is plain DOM and fetch. Styling follows the host's
@@ -66,29 +82,23 @@ window.__ModuleLoader__.load({
      */
     const ZH = {
       action: {
-        idle: '重启 DSH',
         idleTitle: '重启 DeepSeek Harness（整个应用）',
-        posting: '正在重启…',
         postingTitle: '正在请求重启',
-        waiting: '等待应用启动…',
         waitingTitle: '应用已退出，正在等待它重新启动',
-        error: '重启失败',
         errorTitle: '重启请求失败',
         timeout: '等待超时：应用若已用新地址打开，请在新窗口继续，本页可以关闭。',
+        stuck: '重启似乎没有生效：应用仍在运行。',
       },
     }
 
     const EN = {
       action: {
-        idle: 'Restart DSH',
         idleTitle: 'Restart DeepSeek Harness (the whole application)',
-        posting: 'Restarting…',
         postingTitle: 'Requesting a restart',
-        waiting: 'Waiting for the app…',
         waitingTitle: 'The application has quit; waiting for it to start again',
-        error: 'Restart failed',
         errorTitle: 'The restart request failed',
         timeout: 'Timed out: if the app reopened elsewhere, continue there; this page can be closed.',
+        stuck: 'The restart did not take effect: the application is still running.',
       },
     }
 
@@ -99,6 +109,43 @@ window.__ModuleLoader__.load({
         const [scope, name] = key.split('.')
         return ZH[scope] !== undefined && ZH[scope][name] !== undefined ? ZH[scope][name] : key
       }
+    }
+
+    /**
+     * Sheet for the button and the menu-strip offset. The `:has()` rule repeats
+     * `data-windows-titlebar` to outrank the sidebar package's own
+     * `html[data-windows-titlebar]:has(...)` rule (specificity 0,2,1); a tie
+     * would depend on which `<style>` landed last, and the menu would slide back
+     * under the button whenever the sidebar collapses.
+     */
+    const STYLE_ID = `${NS}:style`
+    const MENU = 'html[data-windows-titlebar][data-windows-titlebar][data-windows-titlebar]'
+    const CSS = [
+      '[data-restart-app]{position:absolute;top:6px;left:48px;z-index:30;display:inline-flex;',
+      'align-items:center;justify-content:center;width:28px;height:28px;padding:0;margin:0;',
+      'border:none;border-radius:var(--dsw-radius-sm,6px);background:transparent;',
+      'color:var(--dsw-alias-label-secondary,#6b7280);cursor:pointer;pointer-events:auto;',
+      '-webkit-app-region:no-drag;transition:background 120ms ease,color 120ms ease,opacity 120ms ease}',
+      '[data-restart-app]:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12))}',
+      '[data-restart-app]:disabled{cursor:default;opacity:.55}',
+      '[data-restart-app][data-phase="error"]{color:var(--dsw-alias-label-error,#d33)}',
+      'html[data-windows-titlebar] [data-restart-app]{top:calc((var(--dsh-windows-titlebar-height,40px) - 28px) / 2)}',
+      'html[data-windows-titlebar] [data-sidebar-collapsed="true"] [data-restart-app]{left:84px}',
+      `${MENU}{--dsh-windows-menu-start:84px}`,
+      `${MENU}:has([data-sidebar-collapsed="true"]){--dsh-windows-menu-start:120px}`,
+    ].join('')
+
+    function useStyleSheet() {
+      useEffect(() => {
+        if (document.getElementById(STYLE_ID) !== null) return undefined
+        const element = document.createElement('style')
+        element.id = STYLE_ID
+        element.textContent = CSS
+        document.head.appendChild(element)
+        return () => {
+          if (element.parentNode !== null) element.parentNode.removeChild(element)
+        }
+      }, [])
     }
 
     /** Restart glyph: a circular arrow, drawn in `currentColor`. */
@@ -114,21 +161,12 @@ window.__ModuleLoader__.load({
       )
     }
 
-    const LABELS = (t) => ({
-      idle: { text: t('action.idle'), title: t('action.idleTitle') },
-      posting: { text: t('action.posting'), title: t('action.postingTitle') },
-      waiting: { text: t('action.waiting'), title: t('action.waitingTitle') },
-      error: { text: t('action.error'), title: t('action.errorTitle') },
-    })
-
     function RestartControl(props) {
-      const wide = props !== undefined && props.wide === true
       const t = translator(props)
-      const labels = LABELS(t)
       const [phase, setPhase] = useState('loading')
       const [message, setMessage] = useState('')
-      const [hover, setHover] = useState(false)
       const busyRef = useRef(false)
+      useStyleSheet()
 
       // Ask the Host once whether a restart is possible here.
       useEffect(() => {
@@ -163,20 +201,31 @@ window.__ModuleLoader__.load({
             return
           }
           setPhase('waiting')
+          // The helper sleeps before it kills anything, so the first probes still
+          // reach the process that is about to die. Only a down-then-up sequence
+          // means the new instance answered; reloading on an early success would
+          // bounce the page against the old server first.
+          let sawDown = false
           for (let attempt = 0; attempt < POLL_LIMIT; attempt += 1) {
             await delay(POLL_MS)
+            let up = false
             try {
               const probe = await request('/')
-              if (probe.ok) {
-                window.location.reload()
-                return
-              }
+              up = probe.ok
             } catch {
-              // The server is still down; keep waiting.
+              up = false
+            }
+            if (!up) {
+              sawDown = true
+              continue
+            }
+            if (sawDown) {
+              window.location.reload()
+              return
             }
           }
           setPhase('error')
-          setMessage(t('action.timeout'))
+          setMessage(t(sawDown ? 'action.timeout' : 'action.stuck'))
           busyRef.current = false
         } catch (error) {
           setPhase('error')
@@ -191,55 +240,26 @@ window.__ModuleLoader__.load({
 
       if (phase === 'loading' || phase === 'hidden') return null
 
-      const label = labels[phase] || labels.idle
       const disabled = phase === 'posting' || phase === 'waiting'
-      const detail = phase === 'error' && message !== '' ? message : label.title
-      const showText = wide || phase !== 'idle'
-      const text = phase === 'error' && message !== '' ? message : label.text
-
-      const style = {
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        maxWidth: wide ? 180 : 'none',
-        padding: '4px 6px',
-        border: 'none',
-        borderRadius: 6,
-        background: hover && !disabled ? 'var(--dsw-alias-bg-hover, rgba(127, 127, 127, 0.12))' : 'transparent',
-        color: 'inherit',
-        font: 'inherit',
-        fontSize: 12,
-        lineHeight: '16px',
-        cursor: disabled ? 'default' : 'pointer',
-        opacity: disabled ? 0.55 : 0.8,
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
-        textOverflow: 'ellipsis',
-        transition: 'background 120ms ease, opacity 120ms ease',
-      }
+      const title = phase === 'error' && message !== '' ? message : t(`action.${phase}Title`)
 
       return h('button', {
         type: 'button',
         onClick: handleClick,
         disabled,
-        title: detail,
-        'aria-label': label.title,
+        title,
+        'aria-label': t('action.idleTitle'),
+        'data-restart-app': '',
         'data-phase': phase,
-        style,
-        onMouseEnter: () => setHover(true),
-        onMouseLeave: () => setHover(false),
-      },
-        h(RestartGlyph, { size: 15 }),
-        showText ? h('span', { key: 'label', style: { overflow: 'hidden', textOverflow: 'ellipsis' } }, text) : null,
-      )
+      }, h(RestartGlyph, { size: 16 }))
     }
 
     return {
       inject: ['slots', 'locale'],
       apply(ctx) {
         ctx.effect(() => ctx.locale.register(NS, { zh: ZH, en: EN }), `${NS}: dictionaries`)
-        ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
-          name: 'sidebar.footer.action',
+        ctx.slots.inject('shell.overlay', () => ctx.slots.register({
+          name: 'shell.overlay',
           locale: NS,
           id: 'dsh-restart-app',
           order: 30,

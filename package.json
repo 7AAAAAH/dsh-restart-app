@@ -1,6 +1,6 @@
 {
   "name": "dsh-restart-app",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Sidebar button that restarts the whole DeepSeek Harness desktop app (Electron shell and Host) and reloads the page once it is back.",
   "type": "module",
   "license": "MIT",

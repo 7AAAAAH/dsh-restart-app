@@ -1,10 +1,11 @@
 # dsh-restart-app
 
-A **Restart DSH** button in the DeepSeek Harness sidebar foot. One click stops the
-whole desktop application — Electron shell, Host, renderers, tool subprocesses —
-and starts it again, then reloads the page into the fresh instance.
+A restart button in the DeepSeek Harness title strip, just right of the sidebar
+toggle. One click stops the whole desktop application — Electron shell, Host,
+renderers, tool subprocesses — and starts it again, then reloads the page into
+the fresh instance.
 
-![The button in the sidebar foot](icon.svg)
+![The restart glyph](icon.svg)
 
 Built for the packaged **Windows desktop** app. On any other Host (`dsh web`,
 `dsh tui`, a plain Node process) the button hides itself: there is nothing to
@@ -36,13 +37,30 @@ dsh plugin --profile desktop add link:C:\path\to\dsh-restart-app
 ```
 
 Then **restart the application once** so the profile picks the plugin up. From
-then on the button lives in the sidebar foot, next to the settings gear.
+then on the button lives in the top-left strip, right of the sidebar toggle.
 
 Uninstall:
 
 ```powershell
 dsh plugin --profile desktop remove dsh-restart-app
 ```
+
+## Where the button sits
+
+The button is a glyph in the window's top-left strip, immediately right of the
+sidebar toggle. It registers into `shell.overlay` rather than the sidebar foot:
+the foot is hidden while the sidebar is collapsed, and the sidebar package's
+`shell.leading` seat is only rendered on macOS. `shell.overlay` is a full-window
+layer whose direct children get `pointer-events: auto`, so an absolutely
+positioned button there sits in the titlebar without disturbing the layout.
+
+The application's own menu strip starts at `--dsh-windows-menu-start` (48px) —
+exactly where the button goes — so the plugin's stylesheet pushes that variable
+to the right of the button: 84px normally, 120px while the sidebar is collapsed
+(the collapsed layout parks its new-session button at 48px, so the button itself
+moves to 84px there). The rules repeat the `data-windows-titlebar` attribute to
+outrank the sidebar package's own `:has()` rule, which would otherwise slide the
+menu back under the button.
 
 ## What one click does
 
@@ -57,8 +75,9 @@ dsh plugin --profile desktop remove dsh-restart-app
    starts the executable again with `Start-Process`.
 5. Five seconds later it records whether the new application survived, then
    exits.
-6. The page polls its own origin once a second; when the server answers again it
-   reloads.
+6. The page polls its own origin once a second. It waits for the server to go
+   down *and* come back before reloading: the helper sleeps before it kills
+   anything, so an early successful probe is still the old process.
 
 The helper's log is the first place to look when something goes wrong:
 
@@ -112,7 +131,7 @@ variable is the difference between a working app and that crash dialog.
 | --- | --- |
 | `index.js` | Host half: the two routes, and starting the stage. |
 | `scripts.js` | `restart.ps1` / `stage.ps1` text and the desktop check — pure functions, no `ctx`, no I/O. |
-| `client.js` | Client half: the sidebar control, its states, its dictionaries. |
+| `client.js` | Client half: the title-strip button, its states, its dictionaries. |
 | `cordis.patch.yml` | The bundle patch that inserts the plugin into a profile. |
 | `locale/*.json` | Plugin-manager metadata only; runtime strings live in `client.js`. |
 | `test/render.mjs` | Dependency-free assertions on the generated scripts. |
