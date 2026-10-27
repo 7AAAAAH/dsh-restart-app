@@ -1,11 +1,11 @@
 {
   "name": "dsh-restart-app",
-  "version": "0.1.1",
-  "description": "Sidebar button that restarts the whole DeepSeek Harness desktop app (Electron shell and Host) and reloads the page once it is back.",
+  "version": "0.1.2",
+  "description": "Restart button in the title strip of the DeepSeek Harness desktop app: stops every process the application owns, starts it again, and reloads the page once the new instance answers.",
   "type": "module",
   "license": "MIT",
   "author": "7AAAAAH",
-  "icon": "./icon.svg",
+  "icon": "./assets/icon-256.png",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/7AAAAAH/dsh-restart-app.git"
@@ -31,7 +31,7 @@
     "./client": "./client.js",
     "./scripts": "./scripts.js",
     "./locale/*.json": "./locale/*.json",
-    "./icon": "./icon.svg"
+    "./icon": "./assets/icon-256.png"
   },
   "files": [
     "index.js",
@@ -40,6 +40,8 @@
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
+    "assets/icon-256.png",
+    "screenshots.json",
     "README.md",
     "README.zh.md",
     "LICENSE"
@@ -49,7 +51,7 @@
     "client": {
       "platform": "web",
       "immediately": true,
-      "inject": ["@deepseek-ai/dsh-client-ui-sidebar"]
+      "inject": ["@deepseek-ai/dsh-client-ui-layout"]
     },
     "manifestVersion": 1
   },

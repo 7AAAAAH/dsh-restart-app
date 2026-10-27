@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Restart DSH",
-    "description": "Adds a button in the sidebar foot that restarts the whole DeepSeek Harness desktop application (window shell and Host) and reloads the page when it is back."
+    "description": "Adds a restart button to the top-left of the window title strip: one click stops the whole DeepSeek Harness desktop application (window shell, Host and every child process), starts it again, and reloads the page once the new instance answers."
   }
 }

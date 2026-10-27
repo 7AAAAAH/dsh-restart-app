@@ -3,6 +3,8 @@
 DeepSeek Harness 标题栏左上角的重启按钮，就在「收起侧边栏」右边。点一下，整个桌面应用
 （窗口外壳、宿主进程、渲染进程、工具子进程）会被停掉并重新拉起，页面随后自动刷新进新实例。
 
+![标题栏里的重启按钮](assets/screenshot-1.png)
+
 面向打包版 **Windows 桌面应用**。其它宿主（`dsh web`、`dsh tui`、普通 Node 进程）里
 按钮会自动隐藏：那里没有可重启的东西，浏览器会话也绝不该有杀掉自己终端的能力。
 
@@ -27,6 +29,9 @@ dsh plugin --profile desktop add github:7AAAAAH/dsh-restart-app
 ```powershell
 dsh plugin --profile desktop add link:C:\path\to\dsh-restart-app
 ```
+
+`link:` 装的会被插件管理器当成本地开发：标成「本地开发」，也不会自我更新。想让别人
+装、想要更新检查，就用 `github:`（或等 npm 发布后用包名）。
 
 然后**重启一次应用**让 profile 加载插件。之后按钮就出现在左上角标题栏里、
 「收起侧边栏」按钮的右边。
@@ -109,6 +114,8 @@ node-addon-require-builtin-win32-x64-msvc (auto)
 | `client.js` | 客户端半边：标题栏按钮、状态机、字典。 |
 | `cordis.patch.yml` | 把插件插进 profile 的 bundle patch。 |
 | `locale/*.json` | 只有插件管理器元数据；运行时字符串在 `client.js` 里。 |
+| `assets/` | 市场图标（256×256 PNG）和标题栏截图。 |
+| `screenshots.json` | 市场展示哪几张仓库截图。 |
 | `test/render.mjs` | 对生成脚本的零依赖断言。 |
 
 `test/` 随仓库走，不随包走：断言要在源码树里跑，而不是在 `node_modules` 里。

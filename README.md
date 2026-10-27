@@ -5,7 +5,7 @@ toggle. One click stops the whole desktop application — Electron shell, Host,
 renderers, tool subprocesses — and starts it again, then reloads the page into
 the fresh instance.
 
-![The restart glyph](icon.svg)
+![The restart button in the title strip](assets/screenshot-1.png)
 
 Built for the packaged **Windows desktop** app. On any other Host (`dsh web`,
 `dsh tui`, a plain Node process) the button hides itself: there is nothing to
@@ -35,6 +35,10 @@ From a checkout:
 ```powershell
 dsh plugin --profile desktop add link:C:\path\to\dsh-restart-app
 ```
+
+A `link:` install is treated as local development by the plugin manager: it is
+labelled `local` and never updates itself. Install from `github:` (or from npm,
+once the package is published) to get the released source and update checks.
 
 Then **restart the application once** so the profile picks the plugin up. From
 then on the button lives in the top-left strip, right of the sidebar toggle.
@@ -134,6 +138,8 @@ variable is the difference between a working app and that crash dialog.
 | `client.js` | Client half: the title-strip button, its states, its dictionaries. |
 | `cordis.patch.yml` | The bundle patch that inserts the plugin into a profile. |
 | `locale/*.json` | Plugin-manager metadata only; runtime strings live in `client.js`. |
+| `assets/` | Marketplace icon (256×256 PNG) and the title-strip screenshot. |
+| `screenshots.json` | Which repository screenshots the marketplace lists. |
 | `test/render.mjs` | Dependency-free assertions on the generated scripts. |
 
 `test/` ships with the repository, not with the package: run the assertions from
